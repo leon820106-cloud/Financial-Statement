@@ -283,83 +283,71 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* ─────────────────────────────────────────
-   設定：Google Sheets ID 與工作表 GID
-   試算表必須設為「知道連結的人可以檢視」
-───────────────────────────────────────── */
-const SHEET_ID  = '1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M';
-const SHEET_GID = '0';
+/* ══════════════════════════════════════════
+   資料來源：每月結帳目標管理 Google Sheets
+   自動同步日期：2026/04/17
+══════════════════════════════════════════ */
+let rawData = [
+  {no:'1', date:'2026/01/07', item:'應收傳票',                  person:'許乃心', done:'已達成', note:''},
+  {no:'2', date:'2026/01/08', item:'費用傳票',                  person:'郭又瑄', done:'已達成', note:''},
+  {no:'3', date:'2026/01/06', item:'固定資產傳票',              person:'許乃心', done:'已達成', note:''},
+  {no:'4', date:'2026/01/05', item:'進貨料傳票',                person:'廖淑儀', done:'已達成', note:''},
+  {no:'5', date:'2026/01/06', item:'委外加工費傳票',            person:'陳昱伶', done:'已達成', note:''},
+  {no:'6', date:'2026/01/07', item:'PII結帳',                   person:'陳昱伶', done:'已達成', note:''},
+  {no:'7', date:'2026/01/09', item:'成本結帳',                  person:'陳昱伶', done:'已達成', note:''},
+  {no:'8', date:'2026/01/07', item:'科餘表-AR.預收',            person:'許乃心', done:'未達成', note:'1/8請假，已於1/9完成'},
+  {no:'9', date:'2026/01/08', item:'科餘表-AE',                 person:'郭又瑄', done:'未達成', note:'1/9完成'},
+  {no:'10',date:'2026/01/09', item:'科餘表-AE(員董調整.所得稅)',person:'郭又瑄', done:'已達成', note:''},
+  {no:'11',date:'2026/01/08', item:'科餘表-PPE',                person:'許乃心', done:'未達成', note:'1/8請假，已於1/9完成'},
+  {no:'12',date:'2026/01/07', item:'科餘表-AP',                 person:'廖淑儀', done:'已達成', note:''},
+  {no:'13',date:'2026/01/08', item:'銀行調節表',                person:'廖淑儀', done:'已達成', note:''},
+  {no:'14',date:'2026/01/09', item:'每月結帳報表',              person:'高韶宇', done:'未達成', note:''},
+  {no:'15',date:'2026/02/04', item:'應收傳票',                  person:'許乃心', done:'已達成', note:''},
+  {no:'16',date:'2026/02/05', item:'費用傳票',                  person:'郭又瑄', done:'已達成', note:''},
+  {no:'17',date:'2026/02/03', item:'固定資產傳票',              person:'許乃心', done:'已達成', note:''},
+  {no:'18',date:'2026/02/05', item:'進貨料傳票',                person:'廖淑儀', done:'已達成', note:''},
+  {no:'19',date:'2026/02/03', item:'委外加工費傳票',            person:'陳昱伶', done:'已達成', note:''},
+  {no:'20',date:'2026/02/04', item:'PII結帳',                   person:'陳昱伶', done:'已達成', note:''},
+  {no:'21',date:'2026/02/05', item:'成本結帳',                  person:'陳昱伶', done:'已達成', note:''},
+  {no:'22',date:'2026/02/05', item:'科餘表-AR.預收',            person:'許乃心', done:'已達成', note:''},
+  {no:'23',date:'2026/02/06', item:'科餘表-AE',                 person:'郭又瑄', done:'未達成', note:'預計2/9(一)完成→2/7(六)已完成'},
+  {no:'24',date:'2026/02/06', item:'科餘表-AE(員董調整.所得稅)',person:'郭又瑄', done:'未達成', note:'預計2/9(一)完成→2/7(六)已完成'},
+  {no:'25',date:'2026/02/05', item:'科餘表-PPE',                person:'許乃心', done:'已達成', note:''},
+  {no:'26',date:'2026/02/05', item:'科餘表-AP',                 person:'廖淑儀', done:'已達成', note:''},
+  {no:'27',date:'2026/02/06', item:'銀行調節表',                person:'廖淑儀', done:'已達成', note:''},
+  {no:'28',date:'2026/02/06', item:'每月結帳報表',              person:'高韶宇', done:'未達成', note:'2/9下班前送出'},
+  {no:'29',date:'2026/03/04', item:'應收傳票',                  person:'許乃心', done:'已達成', note:''},
+  {no:'30',date:'2026/03/05', item:'費用傳票',                  person:'郭又瑄', done:'未達成', note:'昱伶已於3/9完成'},
+  {no:'31',date:'2026/03/04', item:'固定資產傳票',              person:'許乃心', done:'已達成', note:''},
+  {no:'32',date:'2026/03/03', item:'進貨料傳票',                person:'廖淑儀', done:'已達成', note:''},
+  {no:'33',date:'2026/03/03', item:'委外加工費傳票',            person:'陳昱伶', done:'已達成', note:''},
+  {no:'34',date:'2026/03/04', item:'PII結帳',                   person:'陳昱伶', done:'已達成', note:''},
+  {no:'35',date:'2026/03/05', item:'成本結帳',                  person:'陳昱伶', done:'未達成', note:'3/9已完成'},
+  {no:'36',date:'2026/03/05', item:'科餘表-AR.預收',            person:'許乃心', done:'已達成', note:''},
+  {no:'37',date:'2026/03/06', item:'科餘表-AE',                 person:'郭又瑄', done:'未達成', note:'淑儀&昱伶已於3/10完成'},
+  {no:'38',date:'2026/03/06', item:'科餘表-AE(員董調整.所得稅)',person:'郭又瑄', done:'未達成', note:'昱伶已於3/10完成'},
+  {no:'39',date:'2026/03/05', item:'科餘表-PPE',                person:'許乃心', done:'已達成', note:''},
+  {no:'40',date:'2026/03/05', item:'科餘表-AP',                 person:'廖淑儀', done:'已達成', note:''},
+  {no:'41',date:'2026/03/06', item:'銀行調節表',                person:'廖淑儀', done:'未達成', note:'已於3/8完成'},
+  {no:'42',date:'2026/03/06', item:'每月結帳報表',              person:'高韶宇', done:'未達成', note:'已於3/11上午呈核'},
+  {no:'43',date:'2026/04/07', item:'應收傳票',                  person:'許乃心', done:'未達成', note:'4/8已完成'},
+  {no:'44',date:'2026/04/07', item:'費用傳票',                  person:'蕭婉殷', done:'未達成', note:'4/13已完成'},
+  {no:'45',date:'2026/04/07', item:'固定資產傳票',              person:'許乃心', done:'未達成', note:'4/8已完成'},
+  {no:'46',date:'2026/04/02', item:'進貨料傳票',                person:'廖淑儀', done:'未達成', note:'4/9已完成'},
+  {no:'47',date:'2026/04/02', item:'委外加工費傳票',            person:'陳昱伶', done:'已達成', note:''},
+  {no:'48',date:'2026/04/07', item:'PII結帳',                   person:'陳昱伶', done:'未達成', note:'4/10已完成'},
+  {no:'49',date:'2026/04/08', item:'成本結帳',                  person:'陳昱伶', done:'未達成', note:'4/13已完成'},
+  {no:'50',date:'2026/04/08', item:'科餘表-AR.預收',            person:'許乃心', done:'未達成', note:'4/10已完成'},
+  {no:'51',date:'2026/04/08', item:'科餘表-AE',                 person:'蕭婉殷', done:'未達成', note:'4/14已完成'},
+  {no:'52',date:'2026/04/08', item:'科餘表-AE(員董調整.所得稅)',person:'蕭婉殷', done:'未達成', note:'4/14已完成'},
+  {no:'53',date:'2026/04/08', item:'科餘表-PPE',                person:'許乃心', done:'未達成', note:'4/13已完成'},
+  {no:'54',date:'2026/04/07', item:'科餘表-AP',                 person:'廖淑儀', done:'未達成', note:'4/10已完成'},
+  {no:'55',date:'2026/04/08', item:'銀行調節表',                person:'廖淑儀', done:'未達成', note:'4/10已完成'},
+  {no:'56',date:'2026/04/09', item:'每月結帳報表',              person:'高韶宇', done:'未達成', note:''},
+];
 
-/* ── CSV 解析（處理逗號在引號內的情況）
-   欄序：A=項次 B=目標日期 C=目標項目 D=提醒狀態 E=負責人 F=Email G=是否達成 H=未達成說明
-── */
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
-  return lines.slice(1).map((line, i) => {
-    const cols = [];
-    let cur = '', inQ = false;
-    for (let j = 0; j < line.length; j++) {
-      const ch = line[j];
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-      else { cur += ch; }
-    }
-    cols.push(cur.trim());
-    const clean = s => (s || '').replace(/^"|"$/g, '').trim();
-    return {
-      no:     clean(cols[0]) || String(i + 1),
-      date:   clean(cols[1]),
-      item:   clean(cols[2]),
-      person: clean(cols[4]),
-      done:   clean(cols[6]),
-      note:   clean(cols[7]),
-    };
-  }).filter(d => d.item && d.date);
-}
-
-let rawData     = [];
-let allMonths   = [];
+let allMonths   = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
 let activeMonth = '';
-
-/* ── Loading / Error UI ── */
-function showLoading() {
-  document.getElementById('monthTabs').innerHTML = '<span style="font-size:13px;color:var(--text-muted)">資料載入中…</span>';
-  document.getElementById('metrics').innerHTML   = '';
-  document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">載入中…</td></tr>';
-}
-
-function showError(msg) {
-  document.getElementById('monthTabs').innerHTML = '';
-  document.getElementById('metrics').innerHTML   = '';
-  document.getElementById('tableBody').innerHTML =
-    `<tr><td colspan="6" style="text-align:center;padding:2rem;color:#B03A2E">
-      ⚠ 無法讀取試算表資料<br>
-      <span style="font-size:12px;color:var(--text-muted)">${msg}</span><br>
-      <span style="font-size:12px;color:var(--text-muted)">請確認試算表已設為「知道連結的人可以檢視」</span>
-    </td></tr>`;
-}
-
-/* ── 透過 allorigins proxy 抓 Google Sheets CSV（解決 CORS）── */
-async function loadData() {
-  showLoading();
-  const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
-  try {
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error(`無法連線（HTTP ${res.status}）`);
-    const json = await res.json();
-    rawData = parseCSV(json.contents);
-    if (rawData.length === 0) throw new Error('試算表沒有資料，或欄位格式不符');
-    allMonths = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
-    activeMonth = '';
-    buildTabs();
-    buildPersonFilter();
-    render();
-  } catch(e) {
-    showError(e.message);
-  }
-}
 
 function getMonth(date) {
   const parts = date.split('/');
@@ -382,13 +370,6 @@ function buildTabs() {
     };
     c.appendChild(btn);
   });
-  /* 重新整理按鈕 */
-  const ref = document.createElement('button');
-  ref.className = 'month-btn';
-  ref.textContent = '↺ 重新整理';
-  ref.style.marginLeft = 'auto';
-  ref.onclick = loadData;
-  c.appendChild(ref);
 }
 
 /* ── Person filter ── */
@@ -508,8 +489,9 @@ function render() {
 document.getElementById('filterStatus').addEventListener('change', render);
 document.getElementById('filterPerson').addEventListener('change', render);
 
-/* ── 啟動：從 Google Sheets 載入 ── */
-loadData();
+buildTabs();
+buildPersonFilter();
+render();
 </script>
 </body>
 </html>

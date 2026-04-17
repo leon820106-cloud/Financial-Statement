@@ -290,31 +290,32 @@
 const SHEET_ID  = '1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M';
 const SHEET_GID = '0';
 
-/* ── 解析 gviz JSON 回傳格式
+/* ── CSV 解析（處理逗號在引號內的情況）
    欄序：A=項次 B=目標日期 C=目標項目 D=提醒狀態 E=負責人 F=Email G=是否達成 H=未達成說明
 ── */
-function parseGviz(json) {
-  const rows = json.table.rows;
-  return rows.map((row, i) => {
-    const c = row.c || [];
-    const get = (idx) => (c[idx] && c[idx].v != null) ? String(c[idx].v).trim() : '';
-    const dateRaw = get(1);
-    // gviz 日期格式為 "Date(2026,0,7)" → 轉成 2026/01/07
-    let date = dateRaw;
-    const dm = dateRaw.match(/Date\((\d+),(\d+),(\d+)\)/);
-    if (dm) {
-      const y = dm[1], m = String(parseInt(dm[2]) + 1).padStart(2,'0'), d = String(dm[3]).padStart(2,'0');
-      date = `${y}/${m}/${d}`;
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  return lines.slice(1).map((line, i) => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let j = 0; j < line.length; j++) {
+      const ch = line[j];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
     }
+    cols.push(cur.trim());
+    const clean = s => (s || '').replace(/^"|"$/g, '').trim();
     return {
-      no:     get(0) || String(i + 1),
-      date,
-      item:   get(2),
-      person: get(4),
-      done:   get(6),
-      note:   get(7),
+      no:     clean(cols[0]) || String(i + 1),
+      date:   clean(cols[1]),
+      item:   clean(cols[2]),
+      person: clean(cols[4]),
+      done:   clean(cols[6]),
+      note:   clean(cols[7]),
     };
-  }).filter(d => d.item);
+  }).filter(d => d.item && d.date);
 }
 
 let rawData     = [];
@@ -339,26 +340,25 @@ function showError(msg) {
     </td></tr>`;
 }
 
-/* ── Fetch from Google Sheets via gviz（支援跨來源）── */
-function loadData() {
+/* ── 透過 allorigins proxy 抓 Google Sheets CSV（解決 CORS）── */
+async function loadData() {
   showLoading();
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
-  const script = document.createElement('script');
-  window._gvizCallback = function(json) {
-    document.head.removeChild(script);
-    try {
-      rawData   = parseGviz(json);
-      if (rawData.length === 0) throw new Error('試算表沒有資料列');
-      allMonths = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
-      activeMonth = '';
-      buildTabs();
-      buildPersonFilter();
-      render();
-    } catch(e) { showError(e.message); }
-  };
-  script.onerror = () => showError('無法連線至 Google Sheets，請確認網路與試算表權限');
-  script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}&callback=_gvizCallback`;
-  document.head.appendChild(script);
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
+  try {
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error(`無法連線（HTTP ${res.status}）`);
+    const json = await res.json();
+    rawData = parseCSV(json.contents);
+    if (rawData.length === 0) throw new Error('試算表沒有資料，或欄位格式不符');
+    allMonths = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
+    activeMonth = '';
+    buildTabs();
+    buildPersonFilter();
+    render();
+  } catch(e) {
+    showError(e.message);
+  }
 }
 
 function getMonth(date) {

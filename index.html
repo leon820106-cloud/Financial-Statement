@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>每月結帳目標管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream:    #FDF6E3;
+    --warm0:    #FEF9EE;
+    --warm1:    #FDE9A2;
+    --warm2:    #F9C84A;
+    --warm3:    #E6A817;
+    --warm4:    #B57D09;
+    --warm5:    #7A500A;
+    --warm6:    #4A2F04;
+    --brown1:   #F2E4C4;
+    --brown2:   #D4B483;
+    --brown3:   #9C7A45;
+    --red-bg:   #FEF0EC;
+    --red-txt:  #B03A2E;
+    --grn-bg:   #EEF7EE;
+    --grn-txt:  #2E6B35;
+    --blue-bg:  #EDF3FB;
+    --blue-txt: #2353A4;
+    --text-main:#3A2800;
+    --text-muted:#8B6E3A;
+    --border:   rgba(180,140,60,0.22);
+    --shadow:   0 2px 16px rgba(160,110,20,0.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--text-main);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── top bar ── */
+  .topbar {
+    background: var(--warm6);
+    padding: 0 2rem;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-icon {
+    width: 28px; height: 28px;
+    background: var(--warm2);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .topbar h1 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--warm1);
+    letter-spacing: 0.04em;
+  }
+  .topbar-sub {
+    font-size: 12px;
+    color: var(--brown2);
+    margin-left: auto;
+    text-decoration: none;
+    opacity: 0.85;
+    transition: opacity 0.15s;
+  }
+  .topbar-sub:hover { opacity: 1; text-decoration: underline; }
+
+  /* ── main ── */
+  .main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* ── month tabs ── */
+  .month-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1.75rem;
+  }
+  .month-btn {
+    padding: 7px 22px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Noto Sans TC', sans-serif;
+    border: 1.5px solid var(--brown2);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .month-btn:hover { background: var(--warm1); border-color: var(--warm3); color: var(--warm5); }
+  .month-btn.active {
+    background: var(--warm3);
+    border-color: var(--warm3);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(230,168,23,0.35);
+  }
+
+  /* ── metric cards ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 14px;
+    margin-bottom: 1.75rem;
+  }
+  .metric {
+    background: var(--warm0);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    box-shadow: var(--shadow);
+  }
+  .metric-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.05em; }
+  .metric-value { font-size: 26px; font-weight: 600; font-family: 'Noto Serif TC', serif; color: var(--text-main); }
+  .metric-value.success { color: var(--grn-txt); }
+  .metric-value.danger  { color: var(--red-txt); }
+  .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .progress-wrap { background: var(--brown1); border-radius: 4px; height: 5px; margin-top: 7px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--warm3), var(--warm2)); transition: width 0.4s; }
+
+  /* ── chart card ── */
+  .card {
+    background: var(--warm0);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.75rem;
+  }
+  .card-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--warm5);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 16px;
+    background: var(--warm3);
+    border-radius: 2px;
+  }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* ── filters ── */
+  .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .filter-row label { font-size: 12px; color: var(--text-muted); }
+  .filter-row select {
+    font-size: 13px;
+    font-family: 'Noto Sans TC', sans-serif;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--brown2);
+    background: var(--cream);
+    color: var(--text-main);
+    cursor: pointer;
+  }
+  .filter-row select:focus { outline: 2px solid var(--warm3); }
+
+  /* ── table ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  thead { background: var(--warm1); }
+  th {
+    text-align: left;
+    padding: 9px 12px;
+    color: var(--warm5);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    border-bottom: 1.5px solid var(--warm3);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--brown1); vertical-align: middle; white-space: nowrap; overflow: hidden; }
+  td:last-child { white-space: normal; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--warm1); transition: background 0.15s; }
+  col.col-no     { width: 52px; }
+  col.col-date   { width: 110px; }
+  col.col-item   { width: 28%; }
+  col.col-person { width: 88px; }
+  col.col-done   { width: 88px; }
+  col.col-note   { width: auto; }
+
+  /* ── badges ── */
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .badge-success { background: var(--grn-bg); color: var(--grn-txt); }
+  .badge-danger  { background: var(--red-bg); color: var(--red-txt); }
+  .badge-remind  { background: var(--blue-bg); color: var(--blue-txt); }
+
+  /* ── note cell ── */
+  .note-cell { color: var(--text-muted); font-size: 12px; }
+
+  /* ── footer ── */
+  .footer { text-align: center; font-size: 11px; color: var(--brown3); padding-top: 2rem; }
+
+  @media (max-width: 640px) {
+    .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .main { padding: 1.25rem 1rem 3rem; }
+    .topbar { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-icon">📋</div>
+  <h1>每月結帳目標管理</h1>
+  <a class="topbar-sub" id="sheetLink" href="https://docs.google.com/spreadsheets/d/1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M/edit" target="_blank" rel="noopener">資料來源：每月結帳目標管理 ↗</a>
+</div>
+
+<div class="main">
+
+  <!-- Month tabs -->
+  <div class="month-tabs" id="monthTabs"></div>
+
+  <!-- Metrics -->
+  <div class="metrics" id="metrics"></div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-title">項目明細</div>
+    <div class="filter-row">
+      <label>達成狀態</label>
+      <select id="filterStatus">
+        <option value="">全部</option>
+        <option value="已達成">已達成</option>
+        <option value="未達成">未達成</option>
+      </select>
+      <label>負責人</label>
+      <select id="filterPerson"></select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col class="col-no" /><col class="col-date" /><col class="col-item" /><col class="col-person" /><col class="col-done" /><col class="col-note" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>項次</th><th>目標日期</th><th>目標項目</th><th>負責人</th><th>是否達成</th><th>未達成說明</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card">
+    <div class="card-title">各月份達成狀況</div>
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#2E6B35"></span>≥ 80%</span>
+      <span><span class="legend-dot" style="background:#E6A817"></span>50–79%</span>
+      <span><span class="legend-dot" style="background:#B03A2E"></span>&lt; 50%</span>
+    </div>
+    <div style="position:relative;width:100%;height:220px;">
+      <canvas id="monthChart" role="img" aria-label="各月份達成狀況長條圖"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">© 2026 每月結帳目標管理系統</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ─────────────────────────────────────────
+   設定：Google Sheets ID 與工作表 GID
+   試算表必須設為「知道連結的人可以檢視」
+───────────────────────────────────────── */
+const SHEET_ID  = '1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M';
+const SHEET_GID = '0';
+
+/* ── 解析 gviz JSON 回傳格式
+   欄序：A=項次 B=目標日期 C=目標項目 D=提醒狀態 E=負責人 F=Email G=是否達成 H=未達成說明
+── */
+function parseGviz(json) {
+  const rows = json.table.rows;
+  return rows.map((row, i) => {
+    const c = row.c || [];
+    const get = (idx) => (c[idx] && c[idx].v != null) ? String(c[idx].v).trim() : '';
+    const dateRaw = get(1);
+    // gviz 日期格式為 "Date(2026,0,7)" → 轉成 2026/01/07
+    let date = dateRaw;
+    const dm = dateRaw.match(/Date\((\d+),(\d+),(\d+)\)/);
+    if (dm) {
+      const y = dm[1], m = String(parseInt(dm[2]) + 1).padStart(2,'0'), d = String(dm[3]).padStart(2,'0');
+      date = `${y}/${m}/${d}`;
+    }
+    return {
+      no:     get(0) || String(i + 1),
+      date,
+      item:   get(2),
+      person: get(4),
+      done:   get(6),
+      note:   get(7),
+    };
+  }).filter(d => d.item);
+}
+
+let rawData     = [];
+let allMonths   = [];
+let activeMonth = '';
+
+/* ── Loading / Error UI ── */
+function showLoading() {
+  document.getElementById('monthTabs').innerHTML = '<span style="font-size:13px;color:var(--text-muted)">資料載入中…</span>';
+  document.getElementById('metrics').innerHTML   = '';
+  document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">載入中…</td></tr>';
+}
+
+function showError(msg) {
+  document.getElementById('monthTabs').innerHTML = '';
+  document.getElementById('metrics').innerHTML   = '';
+  document.getElementById('tableBody').innerHTML =
+    `<tr><td colspan="6" style="text-align:center;padding:2rem;color:#B03A2E">
+      ⚠ 無法讀取試算表資料<br>
+      <span style="font-size:12px;color:var(--text-muted)">${msg}</span><br>
+      <span style="font-size:12px;color:var(--text-muted)">請確認試算表已設為「知道連結的人可以檢視」</span>
+    </td></tr>`;
+}
+
+/* ── Fetch from Google Sheets via gviz（支援跨來源）── */
+function loadData() {
+  showLoading();
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
+  const script = document.createElement('script');
+  window._gvizCallback = function(json) {
+    document.head.removeChild(script);
+    try {
+      rawData   = parseGviz(json);
+      if (rawData.length === 0) throw new Error('試算表沒有資料列');
+      allMonths = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
+      activeMonth = '';
+      buildTabs();
+      buildPersonFilter();
+      render();
+    } catch(e) { showError(e.message); }
+  };
+  script.onerror = () => showError('無法連線至 Google Sheets，請確認網路與試算表權限');
+  script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}&callback=_gvizCallback`;
+  document.head.appendChild(script);
+}
+
+function getMonth(date) {
+  const parts = date.split('/');
+  return parts.length >= 2 ? parseInt(parts[1]) + '月' : date;
+}
+
+/* ── Month tabs ── */
+function buildTabs() {
+  const c = document.getElementById('monthTabs');
+  c.innerHTML = '';
+  [['', '全部月份'], ...allMonths.map(m => [m, m])].forEach(([val, label]) => {
+    const btn = document.createElement('button');
+    btn.className = 'month-btn' + (val === '' ? ' active' : '');
+    btn.textContent = label;
+    btn.onclick = () => {
+      activeMonth = val;
+      document.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    };
+    c.appendChild(btn);
+  });
+  /* 重新整理按鈕 */
+  const ref = document.createElement('button');
+  ref.className = 'month-btn';
+  ref.textContent = '↺ 重新整理';
+  ref.style.marginLeft = 'auto';
+  ref.onclick = loadData;
+  c.appendChild(ref);
+}
+
+/* ── Person filter ── */
+function buildPersonFilter() {
+  const sel = document.getElementById('filterPerson');
+  sel.innerHTML = '<option value="">全部</option>' +
+    [...new Set(rawData.map(d => d.person))].map(p => `<option value="${p}">${p}</option>`).join('');
+}
+
+/* ── Filtered data ── */
+function getFiltered() {
+  const st = document.getElementById('filterStatus').value;
+  const pe = document.getElementById('filterPerson').value;
+  return rawData.filter(d =>
+    (!activeMonth || getMonth(d.date) === activeMonth) &&
+    (!st || d.done === st) &&
+    (!pe || d.person === pe)
+  );
+}
+
+/* ── Metrics ── */
+function renderMetrics(data) {
+  const total = data.length;
+  const done  = data.filter(d => d.done === '已達成').length;
+  const fail  = total - done;
+  const rate  = total ? Math.round(done / total * 100) : 0;
+  const ppl   = new Set(data.map(d => d.person)).size;
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric">
+      <div class="metric-label">總項目數</div>
+      <div class="metric-value">${total}</div>
+      <div class="metric-sub">全部追蹤項目</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">已達成</div>
+      <div class="metric-value success">${done}</div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:${rate}%"></div></div>
+      <div class="metric-sub">達成率 ${rate}%</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">未達成</div>
+      <div class="metric-value ${fail > 0 ? 'danger' : 'success'}">${fail}</div>
+      <div class="metric-sub">需關注項目</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">負責人數</div>
+      <div class="metric-value">${ppl}</div>
+      <div class="metric-sub">參與人員</div>
+    </div>`;
+}
+
+/* ── Chart ── */
+let chartInst;
+function renderChart() {
+  const months = allMonths;
+  const rates  = months.map(m => {
+    const total = rawData.filter(d => getMonth(d.date) === m).length;
+    const done  = rawData.filter(d => getMonth(d.date) === m && d.done === '已達成').length;
+    return total ? Math.round(done / total * 100) : 0;
+  });
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById('monthChart'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        label: '達成率',
+        data: rates,
+        backgroundColor: rates.map(r => r >= 80 ? '#2E6B35' : r >= 50 ? '#E6A817' : '#B03A2E'),
+        borderRadius: 6,
+        borderSkipped: false,
+        barPercentage: 0.45,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' 達成率 ' + ctx.parsed.y + '%' } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans TC' }, color: '#8B6E3A', autoSkip: false } },
+        y: {
+          beginAtZero: true, max: 100,
+          ticks: { stepSize: 20, color: '#8B6E3A', font: { family: 'Noto Sans TC' }, callback: v => v + '%' },
+          grid: { color: 'rgba(180,140,60,0.12)' }
+        }
+      }
+    }
+  });
+}
+
+/* ── Table ── */
+function renderTable(data) {
+  document.getElementById('tableBody').innerHTML = data.length === 0
+    ? '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-muted)">沒有符合條件的資料</td></tr>'
+    : data.map(d => `
+    <tr>
+      <td>${d.no}</td>
+      <td style="white-space:nowrap">${d.date}</td>
+      <td>${d.item}</td>
+      <td>${d.person}</td>
+      <td><span class="badge ${d.done === '已達成' ? 'badge-success' : 'badge-danger'}">${d.done}</span></td>
+      <td class="note-cell">${d.note || '—'}</td>
+    </tr>`).join('');
+}
+
+/* ── Render all ── */
+function render() {
+  const data = getFiltered();
+  renderMetrics(data);
+  renderChart();
+  renderTable(data);
+}
+
+document.getElementById('filterStatus').addEventListener('change', render);
+document.getElementById('filterPerson').addEventListener('change', render);
+
+/* ── 啟動：從 Google Sheets 載入 ── */
+loadData();
+</script>
+</body>
+</html>

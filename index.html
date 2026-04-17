@@ -232,6 +232,9 @@
 
   <!-- Month tabs -->
   <div class="month-tabs" id="monthTabs"></div>
+  <div style="margin-top:-12px; margin-bottom:1.5rem; display:flex; justify-content:flex-end;">
+    <button id="refreshBtn" class="month-btn" onclick="syncFromSheets()" style="display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 16px;">↺ 重新整理</button>
+  </div>
 
   <!-- Metrics -->
   <div class="metrics" id="metrics"></div>
@@ -352,6 +355,62 @@ let activeMonth = '';
 function getMonth(date) {
   const parts = date.split('/');
   return parts.length >= 2 ? parseInt(parts[1]) + '月' : date;
+}
+
+/* ── 即時從 Google Sheets 同步 ── */
+const SHEET_ID = '1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M';
+
+function parseSheetTable(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const rows = [...doc.querySelectorAll('table tbody tr')];
+  const result = [];
+  rows.forEach((tr, i) => {
+    const cells = [...tr.querySelectorAll('td')].map(td => (td.innerText || td.textContent || '').trim());
+    if (cells.length < 7 || !cells[2] || !cells[1]) return;
+    const dp = cells[1].match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+    result.push({
+      no:     cells[0] || String(i + 1),
+      date:   dp ? `${dp[1]}/${dp[2].padStart(2,'0')}/${dp[3].padStart(2,'0')}` : cells[1],
+      item:   cells[2],
+      person: cells[4] || '',
+      done:   cells[6] || '',
+      note:   cells[7] || '',
+    });
+  });
+  return result;
+}
+
+async function syncFromSheets() {
+  const btn = document.getElementById('refreshBtn');
+  btn.textContent = '同步中…';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  const target   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}&t=${Date.now()}`;
+
+  try {
+    const res     = await fetch(proxyUrl, { cache: 'no-store' });
+    if (!res.ok) throw new Error('網路錯誤 ' + res.status);
+    const json    = await res.json();
+    const fetched = parseSheetTable(json.contents || '');
+    if (fetched.length === 0) throw new Error('無法解析資料');
+
+    rawData   = fetched;
+    allMonths = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
+    activeMonth = '';
+    buildTabs();
+    buildPersonFilter();
+    render();
+
+    btn.textContent = '✓ 已同步';
+    btn.style.cssText = 'background:#2E6B35;color:#fff;border-color:#2E6B35;opacity:1;';
+    setTimeout(() => { btn.textContent = '↺ 重新整理'; btn.style.cssText = ''; btn.disabled = false; }, 2500);
+  } catch(e) {
+    btn.textContent = '⚠ 同步失敗';
+    btn.style.cssText = 'background:#B03A2E;color:#fff;border-color:#B03A2E;opacity:1;';
+    setTimeout(() => { btn.textContent = '↺ 重新整理'; btn.style.cssText = ''; btn.disabled = false; }, 3000);
+  }
 }
 
 /* ── Month tabs ── */

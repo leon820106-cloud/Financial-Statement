@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>每月結帳目標管理</title>
+<title>結帳目標管理</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -224,7 +224,7 @@
 
 <div class="topbar">
   <div class="topbar-icon">📋</div>
-  <h1>每月結帳目標管理</h1>
+  <h1>結帳目標管理</h1>
   <a class="topbar-sub" id="sheetLink" href="https://docs.google.com/spreadsheets/d/1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M/edit" target="_blank" rel="noopener">資料來源：每月結帳目標管理 ↗</a>
 </div>
 
@@ -268,7 +268,7 @@
     </div>
   </div>
 
-  <!-- Chart -->
+  <!-- Chart: 各月份達成狀況 -->
   <div class="card">
     <div class="card-title">各月份達成狀況</div>
     <div class="legend">
@@ -281,9 +281,21 @@
     </div>
   </div>
 
+  <!-- Chart: 各負責人每月達成情形 -->
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-title">各負責人每月達成情形</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--text-muted);">篩選負責人：</span>
+      <div id="personFilterBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+    <div style="position:relative;width:100%;height:280px;">
+      <canvas id="personChart" role="img" aria-label="各負責人每月達成情形長條圖"></canvas>
+    </div>
+  </div>
+
 </div>
 
-<div class="footer">© 2026 每月結帳目標管理系統</div>
+<div class="footer">© 2026 結帳目標管理系統</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -291,6 +303,10 @@ let rawData     = [];
 let allMonths   = [];
 let activeMonth = '';
 let chartInst   = null;
+let personChartInst = null;
+let selectedPerson  = '__ALL__';
+
+const PALETTE = ['#E6A817','#185FA5','#1D9E75','#A32D2D','#7F77DD','#D4537E','#3B6D11'];
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M/edit?usp=sharing';
 
@@ -436,7 +452,7 @@ function renderMetrics(data) {
     </div>`;
 }
 
-/* ── Chart ── */
+/* ── Chart: 各月份達成狀況 ── */
 function renderChart() {
   const months = allMonths;
   const rates  = months.map(m => {
@@ -469,6 +485,66 @@ function renderChart() {
   });
 }
 
+/* ── Chart: 各負責人每月達成情形 ── */
+function buildPersonFilterBtns() {
+  const allPersons = [...new Set(rawData.map(d => d.person).filter(Boolean))];
+  const wrap = document.getElementById('personFilterBtns');
+  wrap.innerHTML = '';
+
+  const makeBtn = (val, label, idx) => {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.style.cssText = `font-size:12px;padding:4px 14px;border-radius:20px;cursor:pointer;border:1.5px solid;transition:all 0.15s;font-family:'Noto Sans TC',sans-serif;`;
+    const color = val === '__ALL__' ? '#7A500A' : PALETTE[(idx - 1 + PALETTE.length) % PALETTE.length];
+    const isActive = selectedPerson === val;
+    btn.style.background   = isActive ? color : 'transparent';
+    btn.style.color        = isActive ? '#fff' : color;
+    btn.style.borderColor  = color;
+    btn.onclick = () => { selectedPerson = val; buildPersonFilterBtns(); renderPersonChart(); };
+    wrap.appendChild(btn);
+  };
+
+  makeBtn('__ALL__', '全部', 0);
+  allPersons.forEach((p, i) => makeBtn(p, p, i + 1));
+}
+
+function renderPersonChart() {
+  const allPersons = [...new Set(rawData.map(d => d.person).filter(Boolean))];
+  const persons = selectedPerson === '__ALL__' ? allPersons : [selectedPerson];
+  const months  = allMonths;
+
+  const datasets = persons.map((p, i) => {
+    const color = PALETTE[allPersons.indexOf(p) % PALETTE.length];
+    const data  = months.map(m => {
+      const rows = rawData.filter(d => d.person === p && getMonth(d.date) === m);
+      return rows.length ? Math.round(rows.filter(d => d.done === '已達成').length / rows.length * 100) : 0;
+    });
+    return { label: p, data, backgroundColor: color + 'CC', borderColor: color, borderWidth: 1.5, borderRadius: 4, borderSkipped: false };
+  });
+
+  if (personChartInst) personChartInst.destroy();
+  personChartInst = new Chart(document.getElementById('personChart'), {
+    type: 'bar',
+    data: { labels: months, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: selectedPerson === '__ALL__',
+          labels: { color: '#3A2800', font: { family: 'Noto Sans TC', size: 12 }, boxWidth: 12, padding: 14 }
+        },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + '：' + ctx.parsed.y + '%' } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans TC' }, color: '#8B6E3A', autoSkip: false } },
+        y: { beginAtZero: true, max: 100,
+          ticks: { stepSize: 20, color: '#8B6E3A', font: { family: 'Noto Sans TC' }, callback: v => v + '%' },
+          grid: { color: 'rgba(180,140,60,0.12)' } }
+      }
+    }
+  });
+}
+
 /* ── Table ── */
 function renderTable(data) {
   document.getElementById('tableBody').innerHTML = data.length === 0
@@ -489,6 +565,8 @@ function render() {
   renderMetrics(data);
   renderChart();
   renderTable(data);
+  buildPersonFilterBtns();
+  renderPersonChart();
 }
 
 document.getElementById('filterStatus').addEventListener('change', render);

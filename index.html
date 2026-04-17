@@ -232,8 +232,9 @@
 
   <!-- Month tabs -->
   <div class="month-tabs" id="monthTabs"></div>
-  <div style="margin-top:-12px; margin-bottom:1.5rem; display:flex; justify-content:flex-end;">
-    <button id="refreshBtn" class="month-btn" onclick="syncFromSheets()" style="display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 16px;">↺ 重新整理</button>
+  <div style="margin-top:-12px; margin-bottom:1.5rem; display:flex; justify-content:flex-end; align-items:center; gap:12px;">
+    <span id="syncStatus" style="font-size:12px;"></span>
+    <button id="refreshBtn" class="month-btn" onclick="syncFromSheets()" style="font-size:12px;padding:5px 16px;">↺ 重新整理</button>
   </div>
 
   <!-- Metrics -->
@@ -288,8 +289,13 @@
 <script>
 /* ══════════════════════════════════════════
    資料來源：每月結帳目標管理 Google Sheets
-   自動同步日期：2026/04/17
+   ★ 試算表需先「發布到網路」才能即時同步
 ══════════════════════════════════════════ */
+
+/* ── 發布後填入此網址（檔案→共用→發布到網路→工作表1→CSV→發布→複製網址）── */
+const PUBLISHED_CSV_URL = 'https://docs.google.com/spreadsheets/d/1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M/pub?output=csv&gid=0';
+
+/* ── 內建備用資料（發布前或同步失敗時使用）── */
 let rawData = [
   {no:'1', date:'2026/01/07', item:'應收傳票',                  person:'許乃心', done:'已達成', note:''},
   {no:'2', date:'2026/01/08', item:'費用傳票',                  person:'郭又瑄', done:'已達成', note:''},
@@ -357,44 +363,49 @@ function getMonth(date) {
   return parts.length >= 2 ? parseInt(parts[1]) + '月' : date;
 }
 
-/* ── 即時從 Google Sheets 同步 ── */
-const SHEET_ID = '1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M';
-
-function parseSheetTable(html) {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  const rows = [...doc.querySelectorAll('table tbody tr')];
-  const result = [];
-  rows.forEach((tr, i) => {
-    const cells = [...tr.querySelectorAll('td')].map(td => (td.innerText || td.textContent || '').trim());
-    if (cells.length < 7 || !cells[2] || !cells[1]) return;
-    const dp = cells[1].match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
-    result.push({
-      no:     cells[0] || String(i + 1),
-      date:   dp ? `${dp[1]}/${dp[2].padStart(2,'0')}/${dp[3].padStart(2,'0')}` : cells[1],
-      item:   cells[2],
-      person: cells[4] || '',
-      done:   cells[6] || '',
-      note:   cells[7] || '',
+/* ── CSV 解析 ── */
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const results = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (const ch of lines[i]) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    cols.push(cur.trim());
+    const clean = s => (s||'').replace(/^"|"$/g,'').trim();
+    const item = clean(cols[2]);
+    const dateRaw = clean(cols[1]);
+    if (!item || !dateRaw) continue;
+    const dp = dateRaw.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+    results.push({
+      no:     clean(cols[0]) || String(i),
+      date:   dp ? `${dp[1]}/${dp[2].padStart(2,'0')}/${dp[3].padStart(2,'0')}` : dateRaw,
+      item,
+      person: clean(cols[4]),
+      done:   clean(cols[6]),
+      note:   clean(cols[7]),
     });
-  });
-  return result;
+  }
+  return results;
 }
 
+/* ── 重新整理：直接 fetch 已發布的 CSV ── */
 async function syncFromSheets() {
   const btn = document.getElementById('refreshBtn');
-  btn.textContent = '同步中…';
+  btn.textContent = '⏳ 同步中…';
   btn.disabled = true;
-  btn.style.opacity = '0.6';
-
-  const target   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}&t=${Date.now()}`;
 
   try {
-    const res     = await fetch(proxyUrl, { cache: 'no-store' });
-    if (!res.ok) throw new Error('網路錯誤 ' + res.status);
-    const json    = await res.json();
-    const fetched = parseSheetTable(json.contents || '');
-    if (fetched.length === 0) throw new Error('無法解析資料');
+    const res = await fetch(PUBLISHED_CSV_URL + '&t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    if (text.includes('<html') || text.includes('<!DOCTYPE')) throw new Error('尚未發布到網路');
+    const fetched = parseCSV(text);
+    if (fetched.length === 0) throw new Error('資料為空');
 
     rawData   = fetched;
     allMonths = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
@@ -403,13 +414,14 @@ async function syncFromSheets() {
     buildPersonFilter();
     render();
 
-    btn.textContent = '✓ 已同步';
-    btn.style.cssText = 'background:#2E6B35;color:#fff;border-color:#2E6B35;opacity:1;';
-    setTimeout(() => { btn.textContent = '↺ 重新整理'; btn.style.cssText = ''; btn.disabled = false; }, 2500);
-  } catch(e) {
-    btn.textContent = '⚠ 同步失敗';
-    btn.style.cssText = 'background:#B03A2E;color:#fff;border-color:#B03A2E;opacity:1;';
+    const now = new Date().toLocaleTimeString('zh-TW');
+    btn.textContent = `✓ 已同步 ${now}`;
+    btn.style.cssText = 'background:#2E6B35;color:#fff;border-color:#2E6B35;';
     setTimeout(() => { btn.textContent = '↺ 重新整理'; btn.style.cssText = ''; btn.disabled = false; }, 3000);
+  } catch(e) {
+    btn.textContent = '⚠ ' + e.message;
+    btn.style.cssText = 'background:#B03A2E;color:#fff;border-color:#B03A2E;';
+    setTimeout(() => { btn.textContent = '↺ 重新整理'; btn.style.cssText = ''; btn.disabled = false; }, 4000);
   }
 }
 
@@ -548,9 +560,12 @@ function render() {
 document.getElementById('filterStatus').addEventListener('change', render);
 document.getElementById('filterPerson').addEventListener('change', render);
 
+/* ── 啟動：先顯示備用資料，同時背景嘗試即時同步 ── */
 buildTabs();
 buildPersonFilter();
 render();
+syncFromSheets();
 </script>
+
 </body>
 </html>

@@ -287,142 +287,86 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* ══════════════════════════════════════════
-   資料來源：每月結帳目標管理 Google Sheets
-   ★ 試算表需先「發布到網路」才能即時同步
-══════════════════════════════════════════ */
-
-/* ── 發布後填入此網址（檔案→共用→發布到網路→工作表1→CSV→發布→複製網址）── */
-const PUBLISHED_CSV_URL = 'https://docs.google.com/spreadsheets/d/1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M/pub?output=csv&gid=0';
-
-/* ── 內建備用資料（發布前或同步失敗時使用）── */
-let rawData = [
-  {no:'1', date:'2026/01/07', item:'應收傳票',                  person:'許乃心', done:'已達成', note:''},
-  {no:'2', date:'2026/01/08', item:'費用傳票',                  person:'郭又瑄', done:'已達成', note:''},
-  {no:'3', date:'2026/01/06', item:'固定資產傳票',              person:'許乃心', done:'已達成', note:''},
-  {no:'4', date:'2026/01/05', item:'進貨料傳票',                person:'廖淑儀', done:'已達成', note:''},
-  {no:'5', date:'2026/01/06', item:'委外加工費傳票',            person:'陳昱伶', done:'已達成', note:''},
-  {no:'6', date:'2026/01/07', item:'PII結帳',                   person:'陳昱伶', done:'已達成', note:''},
-  {no:'7', date:'2026/01/09', item:'成本結帳',                  person:'陳昱伶', done:'已達成', note:''},
-  {no:'8', date:'2026/01/07', item:'科餘表-AR.預收',            person:'許乃心', done:'未達成', note:'1/8請假，已於1/9完成'},
-  {no:'9', date:'2026/01/08', item:'科餘表-AE',                 person:'郭又瑄', done:'未達成', note:'1/9完成'},
-  {no:'10',date:'2026/01/09', item:'科餘表-AE(員董調整.所得稅)',person:'郭又瑄', done:'已達成', note:''},
-  {no:'11',date:'2026/01/08', item:'科餘表-PPE',                person:'許乃心', done:'未達成', note:'1/8請假，已於1/9完成'},
-  {no:'12',date:'2026/01/07', item:'科餘表-AP',                 person:'廖淑儀', done:'已達成', note:''},
-  {no:'13',date:'2026/01/08', item:'銀行調節表',                person:'廖淑儀', done:'已達成', note:''},
-  {no:'14',date:'2026/01/09', item:'每月結帳報表',              person:'高韶宇', done:'未達成', note:''},
-  {no:'15',date:'2026/02/04', item:'應收傳票',                  person:'許乃心', done:'已達成', note:''},
-  {no:'16',date:'2026/02/05', item:'費用傳票',                  person:'郭又瑄', done:'已達成', note:''},
-  {no:'17',date:'2026/02/03', item:'固定資產傳票',              person:'許乃心', done:'已達成', note:''},
-  {no:'18',date:'2026/02/05', item:'進貨料傳票',                person:'廖淑儀', done:'已達成', note:''},
-  {no:'19',date:'2026/02/03', item:'委外加工費傳票',            person:'陳昱伶', done:'已達成', note:''},
-  {no:'20',date:'2026/02/04', item:'PII結帳',                   person:'陳昱伶', done:'已達成', note:''},
-  {no:'21',date:'2026/02/05', item:'成本結帳',                  person:'陳昱伶', done:'已達成', note:''},
-  {no:'22',date:'2026/02/05', item:'科餘表-AR.預收',            person:'許乃心', done:'已達成', note:''},
-  {no:'23',date:'2026/02/06', item:'科餘表-AE',                 person:'郭又瑄', done:'未達成', note:'預計2/9(一)完成→2/7(六)已完成'},
-  {no:'24',date:'2026/02/06', item:'科餘表-AE(員董調整.所得稅)',person:'郭又瑄', done:'未達成', note:'預計2/9(一)完成→2/7(六)已完成'},
-  {no:'25',date:'2026/02/05', item:'科餘表-PPE',                person:'許乃心', done:'已達成', note:''},
-  {no:'26',date:'2026/02/05', item:'科餘表-AP',                 person:'廖淑儀', done:'已達成', note:''},
-  {no:'27',date:'2026/02/06', item:'銀行調節表',                person:'廖淑儀', done:'已達成', note:''},
-  {no:'28',date:'2026/02/06', item:'每月結帳報表',              person:'高韶宇', done:'未達成', note:'2/9下班前送出'},
-  {no:'29',date:'2026/03/04', item:'應收傳票',                  person:'許乃心', done:'已達成', note:''},
-  {no:'30',date:'2026/03/05', item:'費用傳票',                  person:'郭又瑄', done:'未達成', note:'昱伶已於3/9完成'},
-  {no:'31',date:'2026/03/04', item:'固定資產傳票',              person:'許乃心', done:'已達成', note:''},
-  {no:'32',date:'2026/03/03', item:'進貨料傳票',                person:'廖淑儀', done:'已達成', note:''},
-  {no:'33',date:'2026/03/03', item:'委外加工費傳票',            person:'陳昱伶', done:'已達成', note:''},
-  {no:'34',date:'2026/03/04', item:'PII結帳',                   person:'陳昱伶', done:'已達成', note:''},
-  {no:'35',date:'2026/03/05', item:'成本結帳',                  person:'陳昱伶', done:'未達成', note:'3/9已完成'},
-  {no:'36',date:'2026/03/05', item:'科餘表-AR.預收',            person:'許乃心', done:'已達成', note:''},
-  {no:'37',date:'2026/03/06', item:'科餘表-AE',                 person:'郭又瑄', done:'未達成', note:'淑儀&昱伶已於3/10完成'},
-  {no:'38',date:'2026/03/06', item:'科餘表-AE(員董調整.所得稅)',person:'郭又瑄', done:'未達成', note:'昱伶已於3/10完成'},
-  {no:'39',date:'2026/03/05', item:'科餘表-PPE',                person:'許乃心', done:'已達成', note:''},
-  {no:'40',date:'2026/03/05', item:'科餘表-AP',                 person:'廖淑儀', done:'已達成', note:''},
-  {no:'41',date:'2026/03/06', item:'銀行調節表',                person:'廖淑儀', done:'未達成', note:'已於3/8完成'},
-  {no:'42',date:'2026/03/06', item:'每月結帳報表',              person:'高韶宇', done:'未達成', note:'已於3/11上午呈核'},
-  {no:'43',date:'2026/04/07', item:'應收傳票',                  person:'許乃心', done:'未達成', note:'4/8已完成'},
-  {no:'44',date:'2026/04/07', item:'費用傳票',                  person:'蕭婉殷', done:'未達成', note:'4/13已完成'},
-  {no:'45',date:'2026/04/07', item:'固定資產傳票',              person:'許乃心', done:'未達成', note:'4/8已完成'},
-  {no:'46',date:'2026/04/02', item:'進貨料傳票',                person:'廖淑儀', done:'未達成', note:'4/9已完成'},
-  {no:'47',date:'2026/04/02', item:'委外加工費傳票',            person:'陳昱伶', done:'已達成', note:''},
-  {no:'48',date:'2026/04/07', item:'PII結帳',                   person:'陳昱伶', done:'未達成', note:'4/10已完成'},
-  {no:'49',date:'2026/04/08', item:'成本結帳',                  person:'陳昱伶', done:'未達成', note:'4/13已完成'},
-  {no:'50',date:'2026/04/08', item:'科餘表-AR.預收',            person:'許乃心', done:'未達成', note:'4/10已完成'},
-  {no:'51',date:'2026/04/08', item:'科餘表-AE',                 person:'蕭婉殷', done:'未達成', note:'4/14已完成'},
-  {no:'52',date:'2026/04/08', item:'科餘表-AE(員董調整.所得稅)',person:'蕭婉殷', done:'未達成', note:'4/14已完成'},
-  {no:'53',date:'2026/04/08', item:'科餘表-PPE',                person:'許乃心', done:'未達成', note:'4/13已完成'},
-  {no:'54',date:'2026/04/07', item:'科餘表-AP',                 person:'廖淑儀', done:'未達成', note:'4/10已完成'},
-  {no:'55',date:'2026/04/08', item:'銀行調節表',                person:'廖淑儀', done:'未達成', note:'4/10已完成'},
-  {no:'56',date:'2026/04/09', item:'每月結帳報表',              person:'高韶宇', done:'未達成', note:''},
-];
-
-let allMonths   = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
+let rawData     = [];
+let allMonths   = [];
 let activeMonth = '';
+let chartInst   = null;
 
-function getMonth(date) {
-  const parts = date.split('/');
-  return parts.length >= 2 ? parseInt(parts[1]) + '月' : date;
-}
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Beeef-onFasAdkp_UIAAS5S6Vl1mfltMzE5aRZRTi7M/edit?usp=sharing';
 
-/* ── CSV 解析 ── */
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  const results = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = [];
-    let cur = '', inQ = false;
-    for (const ch of lines[i]) {
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-      else cur += ch;
-    }
-    cols.push(cur.trim());
-    const clean = s => (s||'').replace(/^"|"$/g,'').trim();
-    const item = clean(cols[2]);
-    const dateRaw = clean(cols[1]);
-    if (!item || !dateRaw) continue;
-    const dp = dateRaw.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
-    results.push({
-      no:     clean(cols[0]) || String(i),
-      date:   dp ? `${dp[1]}/${dp[2].padStart(2,'0')}/${dp[3].padStart(2,'0')}` : dateRaw,
-      item,
-      person: clean(cols[4]),
-      done:   clean(cols[6]),
-      note:   clean(cols[7]),
-    });
-  }
-  return results;
-}
-
-/* ── 重新整理：直接 fetch 已發布的 CSV ── */
-async function syncFromSheets() {
-  const btn = document.getElementById('refreshBtn');
-  btn.textContent = '⏳ 同步中…';
-  btn.disabled = true;
-
+/* ── 完全照 dashboard.html 的做法：直接 fetch /export?format=csv ── */
+async function loadSheet(raw) {
+  setStatus('正在連線 Google Sheets...', '');
+  const m = raw.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (!m) { setStatus('無法解析試算表 ID', 'err'); return; }
+  const id  = m[1];
+  const gidM = raw.match(/[?&]gid=(\d+)/);
+  const gid = gidM ? gidM[1] : '0';
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/' + id + '/export?format=csv&id=' + id + '&gid=' + gid;
   try {
-    const res = await fetch(PUBLISHED_CSV_URL + '&t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch(csvUrl);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
-    if (text.includes('<html') || text.includes('<!DOCTYPE')) throw new Error('尚未發布到網路');
-    const fetched = parseCSV(text);
-    if (fetched.length === 0) throw new Error('資料為空');
-
-    rawData   = fetched;
-    allMonths = [...new Set(rawData.map(d => getMonth(d.date)))].sort((a,b) => parseInt(a)-parseInt(b));
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error('試算表資料為空或格式不符');
+    const headers = rows[0].map(h => h.trim());
+    const idx = kw => headers.findIndex(h => h.includes(kw));
+    rawData = rows.slice(1).filter(r => r.some(c => c.trim())).map((r, i) => {
+      const dateRaw = r[idx('目標日期')] || r[idx('日期')] || '';
+      const dp = dateRaw.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+      return {
+        no:     r[idx('項次')] || String(i + 1),
+        date:   dp ? `${dp[1]}/${dp[2].padStart(2,'0')}/${dp[3].padStart(2,'0')}` : dateRaw,
+        item:   r[idx('目標項目')] || r[idx('項目')] || '',
+        person: r[idx('負責人')] || '',
+        done:   r[idx('是否達成')] || '',
+        note:   r[idx('未達成')] || r[idx('說明')] || '',
+      };
+    }).filter(d => d.item && d.date);
+    allMonths   = [...new Set(rawData.map(d => getMonth(d.date)).filter(Boolean))].sort((a,b) => parseInt(a)-parseInt(b));
     activeMonth = '';
     buildTabs();
     buildPersonFilter();
     render();
-
-    const now = new Date().toLocaleTimeString('zh-TW');
-    btn.textContent = `✓ 已同步 ${now}`;
-    btn.style.cssText = 'background:#2E6B35;color:#fff;border-color:#2E6B35;';
-    setTimeout(() => { btn.textContent = '↺ 重新整理'; btn.style.cssText = ''; btn.disabled = false; }, 3000);
+    setStatus('已從 Google Sheets 載入 ' + rawData.length + ' 筆資料', 'ok');
   } catch(e) {
-    btn.textContent = '⚠ ' + e.message;
-    btn.style.cssText = 'background:#B03A2E;color:#fff;border-color:#B03A2E;';
-    setTimeout(() => { btn.textContent = '↺ 重新整理'; btn.style.cssText = ''; btn.disabled = false; }, 4000);
+    setStatus('載入失敗：' + e.message + '　請確認試算表已設為「知道連結的人可以檢視」', 'err');
   }
+}
+
+function parseCSV(text) {
+  return text.split('\n').map(line => {
+    const cells = []; let cur = ''; let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { cells.push(cur); cur = ''; }
+      else { cur += c; }
+    }
+    cells.push(cur);
+    return cells.map(c => c.trim().replace(/^"|"$/g, ''));
+  });
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('syncStatus');
+  el.textContent = msg;
+  el.style.color = type === 'ok' ? '#2E6B35' : type === 'err' ? '#B03A2E' : '#8B6E3A';
+}
+
+function getMonth(date) {
+  const m = date.match(/^\d{4}\/(\d{1,2})\//);
+  return m ? parseInt(m[1]) + '月' : '';
+}
+
+/* ── 重新整理按鈕 ── */
+async function syncFromSheets() {
+  const btn = document.getElementById('refreshBtn');
+  btn.textContent = '⏳ 同步中…';
+  btn.disabled = true;
+  await loadSheet(SHEET_URL);
+  btn.textContent = '↺ 重新整理';
+  btn.disabled = false;
 }
 
 /* ── Month tabs ── */
@@ -447,7 +391,7 @@ function buildTabs() {
 function buildPersonFilter() {
   const sel = document.getElementById('filterPerson');
   sel.innerHTML = '<option value="">全部</option>' +
-    [...new Set(rawData.map(d => d.person))].map(p => `<option value="${p}">${p}</option>`).join('');
+    [...new Set(rawData.map(d => d.person).filter(Boolean))].map(p => `<option value="${p}">${p}</option>`).join('');
 }
 
 /* ── Filtered data ── */
@@ -493,7 +437,6 @@ function renderMetrics(data) {
 }
 
 /* ── Chart ── */
-let chartInst;
 function renderChart() {
   const months = allMonths;
   const rates  = months.map(m => {
@@ -510,25 +453,17 @@ function renderChart() {
         label: '達成率',
         data: rates,
         backgroundColor: rates.map(r => r >= 80 ? '#2E6B35' : r >= 50 ? '#E6A817' : '#B03A2E'),
-        borderRadius: 6,
-        borderSkipped: false,
-        barPercentage: 0.45,
+        borderRadius: 6, borderSkipped: false, barPercentage: 0.45,
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ' 達成率 ' + ctx.parsed.y + '%' } }
-      },
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' 達成率 ' + ctx.parsed.y + '%' } } },
       scales: {
         x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans TC' }, color: '#8B6E3A', autoSkip: false } },
-        y: {
-          beginAtZero: true, max: 100,
+        y: { beginAtZero: true, max: 100,
           ticks: { stepSize: 20, color: '#8B6E3A', font: { family: 'Noto Sans TC' }, callback: v => v + '%' },
-          grid: { color: 'rgba(180,140,60,0.12)' }
-        }
+          grid: { color: 'rgba(180,140,60,0.12)' } }
       }
     }
   });
@@ -538,8 +473,7 @@ function renderChart() {
 function renderTable(data) {
   document.getElementById('tableBody').innerHTML = data.length === 0
     ? '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-muted)">沒有符合條件的資料</td></tr>'
-    : data.map(d => `
-    <tr>
+    : data.map(d => `<tr>
       <td>${d.no}</td>
       <td style="white-space:nowrap">${d.date}</td>
       <td>${d.item}</td>
@@ -560,12 +494,8 @@ function render() {
 document.getElementById('filterStatus').addEventListener('change', render);
 document.getElementById('filterPerson').addEventListener('change', render);
 
-/* ── 啟動：先顯示備用資料，同時背景嘗試即時同步 ── */
-buildTabs();
-buildPersonFilter();
-render();
-syncFromSheets();
+/* ── 啟動時自動載入 ── */
+loadSheet(SHEET_URL);
 </script>
-
 </body>
 </html>

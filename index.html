@@ -9,33 +9,29 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --cream:    #FDF6E3;
-    --warm0:    #FEF9EE;
-    --warm1:    #FDE9A2;
-    --warm2:    #F9C84A;
-    --warm3:    #E6A817;
-    --warm4:    #B57D09;
-    --warm5:    #7A500A;
-    --warm6:    #4A2F04;
-    --brown1:   #F2E4C4;
-    --brown2:   #D4B483;
-    --brown3:   #9C7A45;
+    --bg-page:  #EEF4FF;
+    --bg-card:  #FAFCFF;
+    --bg-soft:  #F0F5FF;
+    --blue1:    #D0DCEF;
+    --blue2:    #A8BEE8;
+    --blue3:    #6B8FD4;
+    --blue4:    #4A6DB5;
+    --blue5:    #2B4D8F;
+    --blue6:    #1A3166;
     --red-bg:   #FEF0EC;
     --red-txt:  #B03A2E;
     --grn-bg:   #EEF7EE;
     --grn-txt:  #2E6B35;
-    --blue-bg:  #EDF3FB;
-    --blue-txt: #2353A4;
-    --text-main:#3A2800;
-    --text-muted:#8B6E3A;
-    --border:   rgba(180,140,60,0.22);
-    --shadow:   0 2px 16px rgba(160,110,20,0.08);
+    --text-main:#1A2D4E;
+    --text-muted:#6E85AD;
+    --border:   rgba(107,143,212,0.25);
+    --shadow:   0 2px 16px rgba(70,100,180,0.10);
   }
 
   html { scroll-behavior: smooth; }
 
   body {
-    background: var(--cream);
+    background: var(--bg-page);
     color: var(--text-main);
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 14px;
@@ -44,7 +40,7 @@
 
   /* ── top bar ── */
   .topbar {
-    background: var(--warm6);
+    background: var(--blue6);
     padding: 0 2rem;
     height: 52px;
     display: flex;
@@ -56,7 +52,7 @@
   }
   .topbar-icon {
     width: 28px; height: 28px;
-    background: var(--warm2);
+    background: var(--blue3);
     border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
     font-size: 16px;
@@ -65,12 +61,12 @@
     font-family: 'Noto Serif TC', serif;
     font-size: 16px;
     font-weight: 600;
-    color: var(--warm1);
+    color: var(--blue1);
     letter-spacing: 0.04em;
   }
   .topbar-sub {
     font-size: 12px;
-    color: var(--brown2);
+    color: var(--blue2);
     margin-left: auto;
     text-decoration: none;
     opacity: 0.85;
@@ -94,18 +90,18 @@
     font-size: 13px;
     font-weight: 500;
     font-family: 'Noto Sans TC', sans-serif;
-    border: 1.5px solid var(--brown2);
+    border: 1.5px solid var(--blue3);
     background: transparent;
-    color: var(--text-muted);
+    color: var(--blue4);
     cursor: pointer;
     transition: all 0.18s;
   }
-  .month-btn:hover { background: var(--warm1); border-color: var(--warm3); color: var(--warm5); }
+  .month-btn:hover { background: var(--blue2); border-color: var(--blue4); color: var(--blue6); }
   .month-btn.active {
-    background: var(--warm3);
-    border-color: var(--warm3);
+    background: var(--blue4);
+    border-color: var(--blue4);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(230,168,23,0.35);
+    box-shadow: 0 2px 8px rgba(74,109,181,0.35);
   }
 
   /* ── metric cards ── */
@@ -116,7 +112,7 @@
     margin-bottom: 1.75rem;
   }
   .metric {
-    background: var(--warm0);
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 1.1rem 1.25rem;
@@ -127,12 +123,12 @@
   .metric-value.success { color: var(--grn-txt); }
   .metric-value.danger  { color: var(--red-txt); }
   .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-  .progress-wrap { background: var(--brown1); border-radius: 4px; height: 5px; margin-top: 7px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--warm3), var(--warm2)); transition: width 0.4s; }
+  .progress-wrap { background: var(--blue2); border-radius: 4px; height: 5px; margin-top: 7px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--blue4), var(--blue3)); transition: width 0.4s; }
 
   /* ── chart card ── */
   .card {
-    background: var(--warm0);
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 1.25rem 1.5rem;
@@ -143,7 +139,7 @@
     font-family: 'Noto Serif TC', serif;
     font-size: 15px;
     font-weight: 600;
-    color: var(--warm5);
+    color: var(--blue5);
     margin-bottom: 10px;
     display: flex;
     align-items: center;
@@ -153,7 +149,7 @@
     content: '';
     display: inline-block;
     width: 4px; height: 16px;
-    background: var(--warm3);
+    background: var(--blue3);
     border-radius: 2px;
   }
   .legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
@@ -168,35 +164,34 @@
     font-family: 'Noto Sans TC', sans-serif;
     padding: 5px 10px;
     border-radius: 8px;
-    border: 1px solid var(--brown2);
-    background: var(--cream);
+    border: 1px solid var(--blue3);
+    background: var(--bg-soft);
     color: var(--text-main);
     cursor: pointer;
   }
-  .filter-row select:focus { outline: 2px solid var(--warm3); }
+  .filter-row select:focus { outline: 2px solid var(--blue3); }
 
   /* ── table ── */
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
-  thead { background: var(--warm1); }
+  thead { background: var(--blue2); }
   th {
     text-align: left;
     padding: 9px 12px;
-    color: var(--warm5);
+    color: var(--blue6);
     font-weight: 500;
     font-size: 12px;
     letter-spacing: 0.04em;
-    border-bottom: 1.5px solid var(--warm3);
+    border-bottom: 1.5px solid var(--blue3);
     white-space: nowrap;
     overflow: hidden;
   }
-  td { padding: 9px 12px; border-bottom: 1px solid var(--brown1); vertical-align: middle; white-space: nowrap; overflow: hidden; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--blue1); vertical-align: middle; white-space: nowrap; overflow: hidden; }
   td:last-child { white-space: normal; }
   tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: var(--warm1); transition: background 0.15s; }
-  col.col-no     { width: 52px; }
+  tbody tr:hover td { background: var(--bg-soft); transition: background 0.15s; }
   col.col-date   { width: 110px; }
-  col.col-item   { width: 28%; }
+  col.col-item   { width: 30%; }
   col.col-person { width: 88px; }
   col.col-done   { width: 88px; }
   col.col-note   { width: auto; }
@@ -205,13 +200,12 @@
   .badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 500; white-space: nowrap; }
   .badge-success { background: var(--grn-bg); color: var(--grn-txt); }
   .badge-danger  { background: var(--red-bg); color: var(--red-txt); }
-  .badge-remind  { background: var(--blue-bg); color: var(--blue-txt); }
 
   /* ── note cell ── */
   .note-cell { color: var(--text-muted); font-size: 12px; }
 
   /* ── footer ── */
-  .footer { text-align: center; font-size: 11px; color: var(--brown3); padding-top: 2rem; }
+  .footer { text-align: center; font-size: 11px; color: var(--text-muted); padding-top: 2rem; }
 
   @media (max-width: 640px) {
     .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -256,11 +250,11 @@
     <div class="table-wrap">
       <table>
         <colgroup>
-          <col class="col-no" /><col class="col-date" /><col class="col-item" /><col class="col-person" /><col class="col-done" /><col class="col-note" />
+          <col class="col-date" /><col class="col-item" /><col class="col-person" /><col class="col-done" /><col class="col-note" />
         </colgroup>
         <thead>
           <tr>
-            <th>項次</th><th>目標日期</th><th>目標項目</th><th>負責人</th><th>是否達成</th><th>未達成說明</th>
+            <th>目標日期</th><th>目標項目</th><th>負責人</th><th>是否達成</th><th>未達成說明</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -476,10 +470,10 @@ function renderChart() {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' 達成率 ' + ctx.parsed.y + '%' } } },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans TC' }, color: '#8B6E3A', autoSkip: false } },
+        x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans TC' }, color: '#4A6DB5', autoSkip: false } },
         y: { beginAtZero: true, max: 100,
-          ticks: { stepSize: 20, color: '#8B6E3A', font: { family: 'Noto Sans TC' }, callback: v => v + '%' },
-          grid: { color: 'rgba(180,140,60,0.12)' } }
+          ticks: { stepSize: 20, color: '#4A6DB5', font: { family: 'Noto Sans TC' }, callback: v => v + '%' },
+          grid: { color: 'rgba(107,143,212,0.15)' } }
       }
     }
   });
@@ -536,10 +530,10 @@ function renderPersonChart() {
         tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + '：' + ctx.parsed.y + '%' } }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans TC' }, color: '#8B6E3A', autoSkip: false } },
+        x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans TC' }, color: '#4A6DB5', autoSkip: false } },
         y: { beginAtZero: true, max: 100,
-          ticks: { stepSize: 20, color: '#8B6E3A', font: { family: 'Noto Sans TC' }, callback: v => v + '%' },
-          grid: { color: 'rgba(180,140,60,0.12)' } }
+          ticks: { stepSize: 20, color: '#4A6DB5', font: { family: 'Noto Sans TC' }, callback: v => v + '%' },
+          grid: { color: 'rgba(107,143,212,0.15)' } }
       }
     }
   });
@@ -548,9 +542,8 @@ function renderPersonChart() {
 /* ── Table ── */
 function renderTable(data) {
   document.getElementById('tableBody').innerHTML = data.length === 0
-    ? '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-muted)">沒有符合條件的資料</td></tr>'
+    ? '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-muted)">沒有符合條件的資料</td></tr>'
     : data.map(d => `<tr>
-      <td>${d.no}</td>
       <td style="white-space:nowrap">${d.date}</td>
       <td>${d.item}</td>
       <td>${d.person}</td>
